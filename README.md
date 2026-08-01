@@ -14,7 +14,7 @@ Simple WhatsApp Bot built with **Node.js** and **Baileys**.
 ## Installation
 
 ```bash
-git clone https://github.com/arcvynoffc/REPOSITORY.git
+git clone https://github.com/arcvynoffc/Base-Arc.git
 cd REPOSITORY
 npm install
 ```
