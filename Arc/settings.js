@@ -2,7 +2,7 @@ const fs = require("fs");
 const chalk = require("chalk");
 
 global.owner = ["628998052763", "6285700525270"];
-global.botName = "EveBotz"
+global.botName = "EveBotz - Base"
 global.ownName = "Arcvyn"
 
 global.msg = {

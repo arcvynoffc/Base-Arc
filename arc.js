@@ -35,6 +35,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const util = require('util');
+const jimp = require("jimp");
+const { title } = require('process');
 require("./Arc/settings");
 
 module.exports = async (sock, m, chatUpdate) => {
@@ -98,21 +100,17 @@ async function ArcReply(textMsg) {
 
 const czx = {
     key: {
-        remoteJid: 'status@broadcast',
+        remoteJid: "status@broadcast",
         fromMe: false,
-        id: global.botName,
-        participant: '13135550002@s.whatsapp.net'
+        participant: "0@s.whatsapp.net"
     },
     message: {
-        locationMessage: {
-            degreesLatitude: -6.200000,
-            degreesLongitude: 106.816666,
-            name: global.botName,
-            address: global.botName,
-            jpegThumbnail: null
+        extendedTextMessage: {
+            text: global.botName
         }
     }
 }
+
 
 function runtime(seconds) {
     seconds = Number(seconds);
@@ -156,6 +154,32 @@ function font(text = "") {
 
     return String(text).replace(/[A-Za-z0-9]/g, char => fancy[normal.indexOf(char)]);
 }
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+function getParsedCases(filepath) {
+    try {
+        const fileContent = fs.readFileSync(filepath, 'utf8');
+        const blockRegex = /((?:case\s+['"][^'"]+['"]\s*:\s*)+)/g;
+        const caseRegex = /case\s+['"]([^'"]+)['"]\s*:/g;
+        
+        const blocks = [...fileContent.matchAll(blockRegex)];
+        const groupedCases = [];
+
+        for (const block of blocks) {
+            const rawBlock = block[1];
+            const casesInBlock = [...rawBlock.matchAll(caseRegex)].map(m => m[1]);
+            
+            if (casesInBlock.length > 0) {
+                groupedCases.push(casesInBlock.join('/'));
+            }
+        }
+
+        return [...new Set(groupedCases)];
+    } catch (e) {
+        return [];
+    }
+}
 
 if (!sock.public && !isOwner) {
 return;
@@ -163,38 +187,130 @@ return;
 switch (command) {
 //
 case "menu": {
-    await sock.sendMessage(m.chat, {
-        buttonsMessage: {
-            locationMessage: {
-                degreesLatitude: 0,
-                degreesLongitude: 0,
+    const image = await jimp.read("./lib/menu.jpg")
+    image.resize(300, 300)
+    const thumb = await image.getBufferAsync(jimp.MIME_JPEG)
+    const allCases = getParsedCases(__filename);
+    const totalFeatures = allCases.length;
+    const caseList = allCases.map((c, i) => `││ *${prefix}${c}*`).join("\n");
+
+    await sock.sendMessage(
+        m.chat,
+        {
+            buttonLocation: {
+                latitude: 0,
+                longitude: 0,
                 name: global.botName,
                 address: global.ownName,
-                jpegThumbnail: "./lib/menu.jpg"
-            },
-            contentText: font(`こんにちは、 *${pushname}*  さん！
-私は ${global.ownName} が開発したボット、${global.botName} です。
+                jpegThumbnail: thumb,
 
-╭╮ ➟ Bot Information
-││ *Bot Name:* ${global.botName}
+                text: font(`こんにちは、 *${pushname}* さん！
+Saya adalah ${global.botName} yang dikembangkan oleh ${global.ownName}.
+
+╭╮ ➟ *Bot Information*
 ││ *Owner Name:* ${global.ownName}
-││ *Bot Mode:* ${sock.public ? 'public' : 'self'}
-││ *Type:* CJS - Case
+││ *Status:* ${isOwner ? "Owner" : isPrem ? "Premium" : "User"}
+││
+││ *Bot Name:* ${global.botName}
+││ *Bot Mode:* ${sock.public ? "Public" : "Self"}
+││ *Type:* CJS - Auto Case Reader
+││ *Total Features:* ${totalFeatures}
 ││ *Runtime:* ${runtime(process.uptime())}
 ╰╯`),
-            footerText: global.botName,
-            buttons: [
-                {
-                    buttonId: ".owner",
-                    buttonText: {
-                        displayText: font("cr: - Arcvyn")
+
+                footer: global.botName,
+
+                listButtonText: font(`☰ ${global.botName}`),
+                listSectionTitle: "",
+
+                listMenu: [
+                    {
+                        id: ".allmenu",
+                        title: "All Menu",
+                        description: "Show All Menu"
                     },
-                    type: 1
-                }
-            ],
-            headerType: 6
+                    {
+                        id: ".owner",
+                        title: "Owner",
+                        description: "Kontak owner"
+                    }
+                ],
+
+                extraButtons: [
+                    {
+                        id: ".ping",
+                        displayText: "Ping"
+                    }
+                ]
+            }
+        },
+        {
+            quoted: czx
         }
-    }, { quoted: m })
+    )
+}
+break
+
+case "allmenu": {
+    const image = await jimp.read("./lib/menu.jpg");
+    image.resize(300, 300);
+    const thumb = await image.getBufferAsync(jimp.MIME_JPEG);
+    const allCases = getParsedCases(__filename);
+    const totalFeatures = allCases.length;
+    const caseList = allCases.map((c, i) => `││ *${prefix}${c}*`).join("\n");
+
+    const menuText = font(`こんにちは、 *${pushname}* さん！
+Saya adalah ${global.botName} yang dikembangkan oleh ${global.ownName}.
+
+╭╮ ➟ *Bot Information*
+││ *Owner Name:* ${global.ownName}
+││ *Status:* ${isOwner ? "Owner" : isPrem ? "Premium" : "User"}
+││ *Bot Name:* ${global.botName}
+││ *Bot Mode:* ${sock.public ? "Public" : "Self"}
+││ *Type:* CJS - Auto Case Reader
+││ *Total Features:* ${totalFeatures}
+││ *Runtime:* ${runtime(process.uptime())}
+╰╯
+
+╭╮ ➟ *Bot Information*
+${caseList}
+╰╯`);
+
+    await sock.sendMessage(
+        m.chat,
+        {
+            buttonLocation: {
+                latitude: 0,
+                longitude: 0,
+                name: global.botName,
+                address: global.ownName,
+                jpegThumbnail: thumb,
+                text: menuText,
+                footer: global.botName,
+                listButtonText: font(`☰ ${global.botName}`),
+                listSectionTitle: "",
+                listMenu: [
+                    {
+                        id: `${prefix}allmenu`,
+                        title: "All Menu",
+                        description: "Menampilkan semua command"
+                    },
+                    {
+                        id: `${prefix}owner`,
+                        title: "Owner",
+                        description: "Kontak owner"
+                    }
+                ],
+                extraButtons: [
+                    {
+                        id: `${prefix}ping`,
+                        displayText: "Ping"
+                    }
+                ]
+            }
+        },
+        { quoted: czx }
+    );
 }
 break
 
@@ -221,7 +337,6 @@ if (!Premium.includes(nomor)) return ArcReply('Number not found')
 Premium.splice(Premium.indexOf(nomor), 1)
 fs.writeFileSync('./database/premium.json', JSON.stringify(Premium))
 ArcReply(`Success delete ${nomor} from premium`)
-
 }
 break
 
@@ -241,6 +356,153 @@ ArcReply("Berhasil Diubah Ke Self")
 break
 
 //
+case "ping":
+case "speed": {
+    const formatUptime = (seconds) => {
+        const day = Math.floor(seconds / 86400);
+        const hour = Math.floor((seconds % 86400) / 3600);
+        const minute = Math.floor((seconds % 3600) / 60);
+        const second = Math.floor(seconds % 60);
+
+        return `${day} Hari ${hour} Jam ${minute} Detik ${second}`;
+    };
+
+    const toGB = bytes => (bytes / 1024 / 1024 / 1024).toFixed(2);
+
+    const start = Date.now();
+
+    const msg = await sock.sendMessage(m.chat, {
+        text: "Tunggu sebentar..."
+    }, {
+        quoted: czx
+    });
+
+    await delay(1500);
+
+    const latency = Date.now() - start;
+
+    const cpus = os.cpus();
+    const cpu = cpus[0];
+
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+
+    await sock.sendMessage(m.chat, {
+        text:
+`*DATA SERVER*
+• Latency : ${latency} ms
+• Hostname : ${os.hostname()}
+• Platform : ${os.platform()} ${os.arch()}
+• Uptime : ${formatUptime(os.uptime())}
+
+*CPU*
+• Model : ${cpu.model}
+• Core : ${cpus.length}
+• Clock : ${cpu.speed} MHz
+• Load : ${os.loadavg().map(v => v.toFixed(2)).join(" | ")}
+
+*RAM*
+• Total : ${toGB(totalMem)} GB
+• Digunakan : ${toGB(usedMem)} GB
+• Tersisa : ${toGB(freeMem)} GB`,
+        edit: msg.key
+    });
+
+}
+break;
+
+case "rvo":
+case "readviewonce":
+case "readvo": {
+    if (!m.quoted) return ArcReply("Reply pesan ViewOnce yang ingin diambil!");
+
+    let q = m.quoted;
+    let msg = q.message || q.msg || q;
+
+    while (msg) {
+        if (msg.ephemeralMessage) msg = msg.ephemeralMessage.message;
+        else if (msg.viewOnceMessage) msg = msg.viewOnceMessage.message;
+        else if (msg.viewOnceMessageV2) msg = msg.viewOnceMessageV2.message;
+        else if (msg.viewOnceMessageV2Extension) msg = msg.viewOnceMessageV2Extension.message;
+        else if (msg.documentWithCaptionMessage) msg = msg.documentWithCaptionMessage.message;
+        else break;
+    }
+
+    let type = Object.keys(msg).find(v =>
+        ["imageMessage", "videoMessage", "audioMessage"].includes(v)
+    );
+
+    if (!type && q.mtype) {
+        if (["imageMessage", "videoMessage", "audioMessage"].includes(q.mtype)) {
+            type = q.mtype;
+        }
+    }
+
+    if (!type) return ArcReply("Reply media ViewOnce yang valid!");
+
+    const targetMsg = msg[type] || msg;
+    const mediaType = type.replace("Message", "");
+    const caption = targetMsg.caption || "";
+
+    try {
+        let buffer;
+
+        try {
+            buffer = await sock.downloadMediaMessage(q);
+        } catch {
+            const stream = await downloadContentFromMessage(targetMsg, mediaType);
+            const chunks = [];
+
+            for await (const chunk of stream) {
+                chunks.push(chunk);
+            }
+
+            buffer = Buffer.concat(chunks);
+        }
+
+        if (!buffer?.length) {
+            return ArcReply("Gagal mendownload media.");
+        }
+
+        switch (mediaType) {
+            case "image":
+                await sock.sendMessage(m.chat, {
+                    image: buffer,
+                    caption
+                }, {
+                    quoted: czx
+                });
+                break;
+
+            case "video":
+                await sock.sendMessage(m.chat, {
+                    video: buffer,
+                    caption
+                }, {
+                    quoted: czx
+                });
+                break;
+
+            case "audio":
+                await sock.sendMessage(m.chat, {
+                    audio: buffer,
+                    mimetype: "audio/mp4",
+                    ptt: true
+                }, {
+                    quoted: czx
+                });
+                break;
+        }
+
+    } catch (e) {
+        console.error(e);
+        ArcReply("Terjadi kesalahan saat mengambil media ViewOnce!");
+    }
+}
+break;
+
+//
 case "owner":
 case "listowner": {
     let contacts = global.owner.map(v => ({
@@ -250,6 +512,32 @@ case "listowner": {
     await sock.sendMessage(chat, { contacts: { displayName: `${global.botName} Owner`, contacts } }, { quoted: m });
 }
 break
+
+case "eval": {
+    if (!isOwner) return ArcReply(global.msg.owner);
+
+    try {
+        let code = body.startsWith(">")
+            ? body.slice(1).trim()
+            : text;
+
+        if (!code) return ArcReply("Masukkan kode yang ingin dieksekusi.");
+
+        let result = await eval(`(async () => { ${code} })()`);
+
+        if (typeof result !== "string") {
+            result = require("util").inspect(result, {
+                depth: 5,
+                colors: false
+            });
+        }
+
+        await ArcReply(result);
+    } catch (e) {
+        await ArcReply(String(e));
+    }
+}
+break;
 
 default:
 if (body.startsWith('>')) {
