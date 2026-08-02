@@ -213,7 +213,7 @@ case "menu": {
 ││
 ││ *Bot Name:* ${global.botName}
 ││ *Bot Mode:* ${sock.public ? "Public" : "Self"}
-││ *Type:* CJS - Auto Case Reader
+││ *Type:* CJS - Case
 ││ *Total Features:* ${totalFeatures}
 ││ *Runtime:* ${runtime(process.uptime())}
 ╰╯`),
@@ -267,7 +267,7 @@ case "allmenu": {
 ││ *Status:* ${isOwner ? "Owner" : isPrem ? "Premium" : "User"}
 ││ *Bot Name:* ${global.botName}
 ││ *Bot Mode:* ${sock.public ? "Public" : "Self"}
-││ *Type:* CJS - Auto Case Reader
+││ *Type:* CJS - Case
 ││ *Total Features:* ${totalFeatures}
 ││ *Runtime:* ${runtime(process.uptime())}
 ╰╯
