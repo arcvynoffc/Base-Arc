@@ -204,7 +204,7 @@ case "menu": {
                 address: global.ownName,
                 jpegThumbnail: thumb,
 
-                text: font(`こんにちは、 *${pushname}* さん！
+                text: font(`こんにちは、  *${pushname}*  さん！
 私は${global.ownName}によって開発された${global.botName}です。
 
 ╭╮ ➟ *Bot Information*
@@ -259,7 +259,7 @@ case "allmenu": {
     const totalFeatures = allCases.length;
     const caseList = allCases.map((c, i) => `││ *${prefix}${c}*`).join("\n");
 
-    const menuText = font(`こんにちは、 *${pushname}* さん！
+    const menuText = font(`こんにちは、  *${pushname}*  さん！
 私は${global.ownName}によって開発された${global.botName}です。
 
 ╭╮ ➟ *Bot Information*
